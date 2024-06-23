@@ -5,7 +5,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 # Initialize the Firebase Admin SDK
-cred = credentials.Certificate('C:/Users/bhall/OneDrive/Desktop/uploadpy.json')
+cred = credentials.Certificate('authfile.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://ayaan-ki-dua-default-rtdb.firebaseio.com/'
 })
