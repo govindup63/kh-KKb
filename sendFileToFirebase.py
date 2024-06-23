@@ -5,18 +5,22 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 # Initialize the Firebase Admin SDK
-cred = credentials.Certificate('/Users/govindpandey/Desktop/ayaan-ki-dua-firebase-adminsdk-d13yx-b523f1c9ad.json')
+cred = credentials.Certificate('C:/Users/bhall/OneDrive/Desktop/uploadpy.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://ayaan-ki-dua-default-rtdb.firebaseio.com/'
 })
 
-# Replace 'COM3' with your Arduino's port name
-arduino_port = 'COM3'
+# Replace 'COM6' with your Arduino's port name
+arduino_port = 'COM6'  # Make sure this matches your Arduino's port
 baud_rate = 9600
 
-# Open the serial connection
-ser = serial.Serial(arduino_port, baud_rate)
-time.sleep(2)  # Wait for the connection to establish
+# Attempt to open the serial connection
+try:
+    ser = serial.Serial(arduino_port, baud_rate)
+    time.sleep(2)  # Wait for the connection to establish
+except serial.SerialException as e:
+    print(f"Could not open port {arduino_port}: {e}")
+    exit(1)
 
 # Reference to the Firebase database path
 ref = db.reference('soilMoistureSensor')
@@ -25,15 +29,29 @@ try:
     while True:
         if ser.in_waiting > 0:
             # Read the line from the serial port
-            sensor_value = ser.readline().decode('utf-8').strip()
-            print(f"Read from Arduino: {sensor_value}")
+            sensor_data = ser.readline().decode('latin-1').strip()
+            print(f"Read from Arduino: {sensor_data}")
 
-            # Upload to Firebase
-            ref.push({
-                'timestamp': int(time.time()),
-                'value': int(sensor_value)
-            })
-            print("Uploaded to Firebase")
+            # Check if the data is numerical or a status message
+            if sensor_data.isdigit():
+                value = int(sensor_data)
+                status = None
+            else:
+                value = None
+                status = sensor_data
+
+            if value is not None:
+                # Store the current value
+                current_value = value
+
+            if status is not None:
+                # Push both current value and status together
+                ref.push({
+                    'timestamp': int(time.time()),
+                    'value': current_value,
+                    'status': status
+                })
+                print("Uploaded to Firebase")
 
 except KeyboardInterrupt:
     print("Exiting program")
